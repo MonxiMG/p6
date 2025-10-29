@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Filmoteca</string>
+    <string name="detail_director">Director: %1$s</string>
+    <string name="detail_year">Año: %1$d</string>
+    <string name="detail_genre">Género: %1$s</string>
+</resources>
