@@ -3,46 +3,75 @@ package es.ua.eps.filmoteca
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
+import com.google.android.material.appbar.MaterialToolbar
 import es.ua.eps.filmoteca.ui.FilmDataFragment
 import es.ua.eps.filmoteca.ui.FilmListFragment
 
 class MainActivity : AppCompatActivity(), FilmListFragment.Callbacks {
 
+    // Solo existe frag_detail en el layout de tablets (two-pane)
     private val isTwoPane: Boolean
-        get() = (supportFragmentManager.findFragmentById(R.id.frag_detail) != null)
+        get() = supportFragmentManager.findFragmentById(R.id.frag_detail) != null
+
+    private var toolbar: MaterialToolbar? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Android decidirá qué layout cargar según el tamaño:
-        // - small: activity_main.xml (FrameLayout)
-        // - large: activity_main_sw600dp.xml (dos fragments estáticos)
+        // Android escogerá el layout móvil o el de tablet según el tamaño
         setContentView(R.layout.activity_main)
 
-        // Solo en small, si es la primera vez, insertamos la lista en el contenedor.
+        // En móviles, activity_main.xml tiene una Toolbar con id toolbar; en tablets no
+        toolbar = findViewById(R.id.toolbar)
+        toolbar?.let {
+            setSupportActionBar(it) // ← imprescindible para que aparezca la flecha
+            it.setNavigationOnClickListener {
+                onBackPressedDispatcher.onBackPressed()
+            }
+        }
+
         if (!isTwoPane && savedInstanceState == null) {
+            // Móvil: cargamos la lista en el contenedor
             supportFragmentManager.commit {
+                setReorderingAllowed(true)
                 replace(R.id.main_container, FilmListFragment())
             }
         }
 
-        // En two-pane no hay que hacer nada: los fragment estáticos ya están en el layout.
+        // Mantén la flecha sincronizada con el back stack (móvil)
+        supportFragmentManager.addOnBackStackChangedListener { updateUpButton() }
+        updateUpButton()
     }
 
-    // ===== Ejercicio 2: respuesta al click =====
+    // Llega el click desde la lista
     override fun onFilmSelected(index: Int) {
         if (isTwoPane) {
-            // Pantalla grande: actualizamos el fragment de detalle ya presente
-            val detail =
-                supportFragmentManager.findFragmentById(R.id.frag_detail) as? FilmDataFragment
-            detail?.showFilm(index)
+            // Tablet: actualiza el detalle estático
+            (supportFragmentManager.findFragmentById(R.id.frag_detail) as? FilmDataFragment)
+                ?.showFilm(index)
         } else {
-            // Pantalla pequeña: navegamos al fragment de detalle
+            // Móvil: navega al detalle
             val detail = FilmDataFragment.newInstance(index)
             supportFragmentManager.commit {
+                setReorderingAllowed(true)
                 replace(R.id.main_container, detail)
-                addToBackStack(null)
+                addToBackStack("detail")
             }
+            // El listener actualizará la flecha automáticamente
         }
+    }
+
+    // Soporte del botón “Up” se dirige al listado
+    override fun onSupportNavigateUp(): Boolean {
+        onBackPressedDispatcher.onBackPressed()
+        return true
+    }
+
+    // Muestra/oculta la flecha solo si hay algo en el back stack (y si hay Toolbar)
+    private fun updateUpButton() {
+        if (toolbar == null) return // En tablets no hay Toolbar en este layout
+        val showUp = supportFragmentManager.backStackEntryCount > 0
+        supportActionBar?.setDisplayHomeAsUpEnabled(showUp)
+        // Centra/ajusta el título
+        supportActionBar?.title = getString(R.string.app_name)
     }
 }
