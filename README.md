@@ -32,3 +32,9 @@ fragments simultáneamente (lista a la izquierda y detalle a la derecha).
     `setSupportActionBar(toolbar)`.
 -   Se añadió una interfaz de comunicación entre fragments y la lógica
     en `MainActivity` para actualizar el detalle en pantallas grandes.
+    
+## Evidencias
+-    videodemostrativo_movil.mp4
+-    videodemostrativo_tablet.mp4
+
+    
